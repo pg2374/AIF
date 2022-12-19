@@ -31,8 +31,8 @@ class AdversarialDebiasing(Transformer):
                  sess,
                  seed=None,
                  adversary_loss_weight=0.1,
-                 num_epochs=50,
-                 batch_size=128,
+                 num_epochs=100,
+                 batch_size=256,
                  classifier_num_hidden_units=200,
                  debias=True):
         """
