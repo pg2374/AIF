@@ -32,7 +32,7 @@ class AdversarialDebiasing(Transformer):
                  seed=None,
                  adversary_loss_weight=0.1,
                  num_epochs=100,
-                 batch_size=256,
+                 batch_size=512,
                  classifier_num_hidden_units=200,
                  debias=True):
         """
@@ -85,21 +85,21 @@ class AdversarialDebiasing(Transformer):
                                   initializer=tf.initializers.glorot_uniform(seed=self.seed1))
             b1 = tf.Variable(tf.zeros(shape=[self.classifier_num_hidden_units]), name='b1')
 
-            h1 = tf.nn.relu(tf.matmul(features, W1) + b1)
+            h1 = tf.nn.leaky_relu(tf.matmul(features, W1) + b1)
             h1 = tf.nn.dropout(h1, keep_prob=keep_prob, seed=self.seed2)
 
             W2 = tf.get_variable('W2', [self.classifier_num_hidden_units, self.classifier_num_hidden_units],
                                  initializer=tf.initializers.glorot_uniform(seed=self.seed3))
             b2 = tf.Variable(tf.zeros(shape=[1]), name='b2')
             
-            h2 = tf.nn.relu(tf.matmul(features, W2) + b2)
+            h2 = tf.nn.leaky_relu(tf.matmul(features, W2) + b2)
             h2 = tf.nn.dropout(h2, keep_prob=keep_prob, seed=self.seed4)
             
             W3 = tf.get_variable('W3', [self.classifier_num_hidden_units, self.classifier_num_hidden_units],
                                  initializer=tf.initializers.glorot_uniform(seed=self.seed5))
             b3 = tf.Variable(tf.zeros(shape=[1]), name='b3')
             
-            h3 = tf.nn.relu(tf.matmul(features, W3) + b3)
+            h3 = tf.nn.leaky_relu(tf.matmul(features, W3) + b3)
             h3 = tf.nn.dropout(h3, keep_prob=keep_prob, seed=self.seed6)
             
             W4 = tf.get_variable('W4', [self.classifier_num_hidden_units, 1],
@@ -174,12 +174,12 @@ class AdversarialDebiasing(Transformer):
 
             # Setup optimizers with learning rates
             global_step = tf.Variable(0, trainable=False)
-            starter_learning_rate = 0.001
+            starter_learning_rate = 0.01
             learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step,
                                                        1000, 0.96, staircase=True)
-            classifier_opt = tf.train.AdamOptimizer(learning_rate)
+            classifier_opt = tf.train.GradientDescentOptimizer(learning_rate)
             if self.debias:
-                adversary_opt = tf.train.AdamOptimizer(learning_rate)
+                adversary_opt = tf.train.GradientDescentOptimizer(learning_rate)
 
             classifier_vars = [var for var in tf.trainable_variables() if 'classifier_model' in var.name]
             if self.debias:
