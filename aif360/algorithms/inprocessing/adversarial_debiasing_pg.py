@@ -95,18 +95,11 @@ class AdversarialDebiasing(Transformer):
             h2 = tf.nn.leaky_relu(tf.matmul(features, W2) + b2)
             h2 = tf.nn.dropout(h2, keep_prob=keep_prob, seed=self.seed4)
             
-            W3 = tf.get_variable('W3', [self.classifier_num_hidden_units, self.classifier_num_hidden_units],
+            W3 = tf.get_variable('W3', [self.classifier_num_hidden_units, 1],
                                  initializer=tf.initializers.glorot_uniform(seed=self.seed5))
             b3 = tf.Variable(tf.zeros(shape=[1]), name='b3')
             
-            h3 = tf.nn.leaky_relu(tf.matmul(features, W3) + b3)
-            h3 = tf.nn.dropout(h3, keep_prob=keep_prob, seed=self.seed6)
-            
-            W4 = tf.get_variable('W4', [self.classifier_num_hidden_units, 1],
-                                 initializer=tf.initializers.glorot_uniform(seed=self.seed7))
-            b4 = tf.Variable(tf.zeros(shape=[1]), name='b4')
-            
-            pred_logit = tf.matmul(h3, W4) + b4
+            pred_logit = tf.matmul(h2, W3) + b3
             pred_label = tf.sigmoid(pred_logit)
 
         return pred_label, pred_logit
@@ -119,7 +112,7 @@ class AdversarialDebiasing(Transformer):
             s = tf.sigmoid((1 + tf.abs(c)) * pred_logits)
 
             W4 = tf.get_variable('W4', [3, 1],
-                                 initializer=tf.initializers.glorot_uniform(seed=self.seed8))
+                                 initializer=tf.initializers.glorot_uniform(seed=self.seed6))
             b4 = tf.Variable(tf.zeros(shape=[1]), name='b4')
 
             pred_protected_attribute_logit = tf.matmul(tf.concat([s, s * true_labels, s * (1.0 - true_labels)], axis=1), W4) + b4
