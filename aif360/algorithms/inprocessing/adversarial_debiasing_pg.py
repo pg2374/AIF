@@ -88,11 +88,25 @@ class AdversarialDebiasing(Transformer):
             h1 = tf.nn.relu(tf.matmul(features, W1) + b1)
             h1 = tf.nn.dropout(h1, keep_prob=keep_prob, seed=self.seed2)
 
-            W2 = tf.get_variable('W2', [self.classifier_num_hidden_units, 1],
+            W2 = tf.get_variable('W2', [self.classifier_num_hidden_units, self.classifier_num_hidden_units],
                                  initializer=tf.initializers.glorot_uniform(seed=self.seed3))
             b2 = tf.Variable(tf.zeros(shape=[1]), name='b2')
-
-            pred_logit = tf.matmul(h1, W2) + b2
+            
+            h2 = tf.nn.relu(tf.matmul(features, W2) + b2)
+            h2 = tf.nn.dropout(h2, keep_prob=keep_prob, seed=self.seed4)
+            
+            W3 = tf.get_variable('W3', [self.classifier_num_hidden_units, self.classifier_num_hidden_units],
+                                 initializer=tf.initializers.glorot_uniform(seed=self.seed5))
+            b3 = tf.Variable(tf.zeros(shape=[1]), name='b3')
+            
+            h3 = tf.nn.relu(tf.matmul(features, W3) + b3)
+            h3 = tf.nn.dropout(h3, keep_prob=keep_prob, seed=self.seed6)
+            
+            W4 = tf.get_variable('W4', [self.classifier_num_hidden_units, 1],
+                                 initializer=tf.initializers.glorot_uniform(seed=self.seed7))
+            b4 = tf.Variable(tf.zeros(shape=[1]), name='b4')
+            
+            pred_logit = tf.matmul(h3, W4) + b4
             pred_label = tf.sigmoid(pred_logit)
 
         return pred_label, pred_logit
