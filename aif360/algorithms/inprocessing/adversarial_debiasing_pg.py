@@ -113,11 +113,11 @@ class AdversarialDebiasing(Transformer):
             c = tf.get_variable('c', initializer=tf.constant(1.0))
             s = tf.sigmoid((1 + tf.abs(c)) * pred_logits)
 
-            W2 = tf.get_variable('W2', [3, 1],
+            W3 = tf.get_variable('W3', [3, 1],
                                  initializer=tf.initializers.glorot_uniform(seed=self.seed4))
-            b2 = tf.Variable(tf.zeros(shape=[1]), name='b2')
+            b3 = tf.Variable(tf.zeros(shape=[1]), name='b3')
 
-            pred_protected_attribute_logit = tf.matmul(tf.concat([s, s * true_labels, s * (1.0 - true_labels)], axis=1), W2) + b2
+            pred_protected_attribute_logit = tf.matmul(tf.concat([s, s * true_labels, s * (1.0 - true_labels)], axis=1), W3) + b3
             pred_protected_attribute_label = tf.sigmoid(pred_protected_attribute_logit)
 
         return pred_protected_attribute_label, pred_protected_attribute_logit
