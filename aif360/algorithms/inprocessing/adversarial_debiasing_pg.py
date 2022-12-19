@@ -31,8 +31,8 @@ class AdversarialDebiasing(Transformer):
                  sess,
                  seed=None,
                  adversary_loss_weight=0.1,
-                 num_epochs=50,
-                 batch_size=512,
+                 num_epochs=100,
+                 batch_size=256,
                  classifier_num_hidden_units=200,
                  debias=True):
         """
@@ -113,11 +113,11 @@ class AdversarialDebiasing(Transformer):
             c = tf.get_variable('c', initializer=tf.constant(1.0))
             s = tf.sigmoid((1 + tf.abs(c)) * pred_logits)
 
-            W3 = tf.get_variable('W3', [3, 1],
+            W2 = tf.get_variable('W2', [3, 1],
                                  initializer=tf.initializers.glorot_uniform(seed=self.seed4))
-            b3 = tf.Variable(tf.zeros(shape=[1]), name='b3')
+            b2 = tf.Variable(tf.zeros(shape=[1]), name='b2')
 
-            pred_protected_attribute_logit = tf.matmul(tf.concat([s, s * true_labels, s * (1.0 - true_labels)], axis=1), W3) + b3
+            pred_protected_attribute_logit = tf.matmul(tf.concat([s, s * true_labels, s * (1.0 - true_labels)], axis=1), W2) + b2
             pred_protected_attribute_label = tf.sigmoid(pred_protected_attribute_logit)
 
         return pred_protected_attribute_label, pred_protected_attribute_logit
@@ -169,7 +169,7 @@ class AdversarialDebiasing(Transformer):
 
             # Setup optimizers with learning rates
             global_step = tf.Variable(0, trainable=False)
-            starter_learning_rate = 0.1
+            starter_learning_rate = 0.001
             learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step,
                                                        1000, 0.96, staircase=True)
             classifier_opt = tf.train.AdamOptimizer(learning_rate)
@@ -220,17 +220,15 @@ class AdversarialDebiasing(Transformer):
                                        adversary_minimizer,
                                        pred_labels_loss,
                                        pred_protected_attributes_loss], feed_dict=batch_feed_dict)
-                       
-                        if i % 100 == 0:
-                            print("epoch: %d |iter: %d: |batch classifier loss: %f: |batch adversarial loss: %f" % (epoch, i, pred_labels_loss_value,
-                                                                                     pred_protected_attributes_loss_value))
+                        if i % 200 == 0:
+                            print("epoch %d; iter: %d; batch classifier loss: %f; batch adversarial loss: %f" % (epoch, i, pred_labels_loss_value,
+                                                                                     pred_protected_attributes_loss_vale))
                     else:
                         _, pred_labels_loss_value = self.sess.run(
                             [classifier_minimizer,
                              pred_labels_loss], feed_dict=batch_feed_dict)
-                        
-                        if i % 100 == 0:
-                            print("epoch: %d |iter: %d: |batch classifier loss: %f" % (
+                        if i % 200 == 0:
+                            print("epoch %d; iter: %d; batch classifier loss: %f" % (
                             epoch, i, pred_labels_loss_value))
         return self
 
