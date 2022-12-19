@@ -222,7 +222,7 @@ class AdversarialDebiasing(Transformer):
                                        pred_protected_attributes_loss], feed_dict=batch_feed_dict)
                         
                         adversary_opt.zero_grad()
-                        pred_protected_attributes_loss.forward()
+                        
                         pred_protected_attributes_loss.backward(clear_buffer=True)
                         adversary_opt.update()
                        
@@ -235,7 +235,7 @@ class AdversarialDebiasing(Transformer):
                              pred_labels_loss], feed_dict=batch_feed_dict)
                         
                         classifier_opt.need_grad = True
-                        pred_labels_loss.forward(clear_no_need_grad=True)
+                        
                         classifier_opt.zero_grad()
                         pred_labels_loss.forward(clear_no_need_grad=True)
                         pred_labels_loss.backward(clear_buffer=True)   
