@@ -222,9 +222,9 @@ class AdversarialDebiasing(Transformer):
                                        pred_protected_attributes_loss], feed_dict=batch_feed_dict)
                         
                         adversary_opt.zero_grad()
-                        
                         pred_protected_attributes_loss.backward(clear_buffer=True)
                         adversary_opt.update()
+                        adversary_opt.step()
                        
                         if i % 100 == 0:
                             print("epoch: %d |iter: %d: |batch classifier loss: %f: |batch adversarial loss: %f" % (epoch, i, pred_labels_loss_value,
@@ -234,12 +234,11 @@ class AdversarialDebiasing(Transformer):
                             [classifier_minimizer,
                              pred_labels_loss], feed_dict=batch_feed_dict)
                         
-                        classifier_opt.need_grad = True
                         
                         classifier_opt.zero_grad()
-                        pred_labels_loss.forward(clear_no_need_grad=True)
                         pred_labels_loss.backward(clear_buffer=True)   
                         classifier_opt.update()
+                        classifier_opt.step()
                         
                         if i % 100 == 0:
                             print("epoch: %d |iter: %d: |batch classifier loss: %f" % (
