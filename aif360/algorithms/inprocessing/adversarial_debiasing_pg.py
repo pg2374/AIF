@@ -32,7 +32,7 @@ class AdversarialDebiasing(Transformer):
                  seed=None,
                  adversary_loss_weight=0.1,
                  num_epochs=50,
-                 batch_size=128,
+                 batch_size=256,
                  classifier_num_hidden_units=200,
                  debias=True):
         """
@@ -160,7 +160,7 @@ class AdversarialDebiasing(Transformer):
 
             # Setup optimizers with learning rates
             global_step = tf.Variable(0, trainable=False)
-            starter_learning_rate = 0.001
+            starter_learning_rate = 0.1
             learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step,
                                                        1000, 0.96, staircase=True)
             classifier_opt = tf.train.AdamOptimizer(learning_rate)
@@ -211,14 +211,14 @@ class AdversarialDebiasing(Transformer):
                                        adversary_minimizer,
                                        pred_labels_loss,
                                        pred_protected_attributes_loss], feed_dict=batch_feed_dict)
-                        if i % 200 == 0:
+                        if i % 100 == 0:
                             print("epoch %d; iter: %d; batch classifier loss: %f; batch adversarial loss: %f" % (epoch, i, pred_labels_loss_value,
                                                                                      pred_protected_attributes_loss_vale))
                     else:
                         _, pred_labels_loss_value = self.sess.run(
                             [classifier_minimizer,
                              pred_labels_loss], feed_dict=batch_feed_dict)
-                        if i % 200 == 0:
+                        if i % 100 == 0:
                             print("epoch %d; iter: %d; batch classifier loss: %f" % (
                             epoch, i, pred_labels_loss_value))
         return self
