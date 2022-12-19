@@ -177,9 +177,9 @@ class AdversarialDebiasing(Transformer):
             starter_learning_rate = 0.01
             learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step,
                                                        1000, 0.96, staircase=True)
-            classifier_opt = tf.train.GradientDescentOptimizer(learning_rate)
+            classifier_opt = tf.train.AdamOptimizer(learning_rate)
             if self.debias:
-                adversary_opt = tf.train.GradientDescentOptimizer(learning_rate)
+                adversary_opt = tf.train.AdamOptimizer(learning_rate)
 
             classifier_vars = [var for var in tf.trainable_variables() if 'classifier_model' in var.name]
             if self.debias:
