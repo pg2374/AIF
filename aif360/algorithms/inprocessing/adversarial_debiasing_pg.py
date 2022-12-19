@@ -31,8 +31,8 @@ class AdversarialDebiasing(Transformer):
                  sess,
                  seed=None,
                  adversary_loss_weight=0.1,
-                 num_epochs=100,
-                 batch_size=256,
+                 num_epochs=50,
+                 batch_size=128,
                  classifier_num_hidden_units=200,
                  debias=True):
         """
@@ -86,19 +86,21 @@ class AdversarialDebiasing(Transformer):
             b1 = tf.Variable(tf.zeros(shape=[self.classifier_num_hidden_units]), name='b1')
 
             h1 = tf.nn.leaky_relu(tf.matmul(features, W1) + b1)
-            h1 = tf.nn.dropout(h1, keep_prob=keep_prob, seed=self.seed2)
+            h1 = tf.nn.dropout(h1, rate=1-keep_prob, seed=self.seed2)
 
             W2 = tf.get_variable('W2', [self.classifier_num_hidden_units, self.classifier_num_hidden_units],
-                                 initializer=tf.initializers.glorot_uniform(seed=self.seed3))
-            b2 = tf.Variable(tf.zeros(shape=[1]), name='b2')
+                                  initializer=tf.initializers.glorot_uniform(seed=self.seed1))
+            b2 = tf.Variable(tf.zeros(shape=[self.classifier_num_hidden_units]), name='b2')
+
+            h2 = tf.nn.leaky_relu(tf.matmul(h1, W2) + b2)
+            h2 = tf.nn.dropout(h2, rate=1-keep_prob, seed=self.seed2)
+
             
-            h2 = tf.nn.leaky_relu(tf.matmul(features, W2) + b2)
-            h2 = tf.nn.dropout(h2, keep_prob=keep_prob, seed=self.seed4)
-            
+
             W3 = tf.get_variable('W3', [self.classifier_num_hidden_units, 1],
-                                 initializer=tf.initializers.glorot_uniform(seed=self.seed5))
+                                 initializer=tf.initializers.glorot_uniform(seed=self.seed3))
             b3 = tf.Variable(tf.zeros(shape=[1]), name='b3')
-            
+
             pred_logit = tf.matmul(h2, W3) + b3
             pred_label = tf.sigmoid(pred_logit)
 
@@ -111,11 +113,11 @@ class AdversarialDebiasing(Transformer):
             c = tf.get_variable('c', initializer=tf.constant(1.0))
             s = tf.sigmoid((1 + tf.abs(c)) * pred_logits)
 
-            W4 = tf.get_variable('W4', [3, 1],
-                                 initializer=tf.initializers.glorot_uniform(seed=self.seed6))
-            b4 = tf.Variable(tf.zeros(shape=[1]), name='b4')
+            W2 = tf.get_variable('W2', [3, 1],
+                                 initializer=tf.initializers.glorot_uniform(seed=self.seed4))
+            b2 = tf.Variable(tf.zeros(shape=[1]), name='b2')
 
-            pred_protected_attribute_logit = tf.matmul(tf.concat([s, s * true_labels, s * (1.0 - true_labels)], axis=1), W4) + b4
+            pred_protected_attribute_logit = tf.matmul(tf.concat([s, s * true_labels, s * (1.0 - true_labels)], axis=1), W2) + b2
             pred_protected_attribute_label = tf.sigmoid(pred_protected_attribute_logit)
 
         return pred_protected_attribute_label, pred_protected_attribute_logit
@@ -138,7 +140,7 @@ class AdversarialDebiasing(Transformer):
         if self.seed is not None:
             np.random.seed(self.seed)
         ii32 = np.iinfo(np.int32)
-        self.seed1, self.seed2, self.seed3, self.seed4, self.seed5, self.seed6, self.seed7, self.seed8 = np.random.randint(ii32.min, ii32.max, size=8)
+        self.seed1, self.seed2, self.seed3, self.seed4 = np.random.randint(ii32.min, ii32.max, size=4)
 
         # Map the dataset labels to 0 and 1.
         temp_labels = dataset.labels.copy()
@@ -167,7 +169,7 @@ class AdversarialDebiasing(Transformer):
 
             # Setup optimizers with learning rates
             global_step = tf.Variable(0, trainable=False)
-            starter_learning_rate = 0.01
+            starter_learning_rate = 0.001
             learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step,
                                                        1000, 0.96, staircase=True)
             classifier_opt = tf.train.AdamOptimizer(learning_rate)
@@ -218,14 +220,14 @@ class AdversarialDebiasing(Transformer):
                                        adversary_minimizer,
                                        pred_labels_loss,
                                        pred_protected_attributes_loss], feed_dict=batch_feed_dict)
-                        if i % 100 == 0:
+                        if i % 200 == 0:
                             print("epoch %d; iter: %d; batch classifier loss: %f; batch adversarial loss: %f" % (epoch, i, pred_labels_loss_value,
                                                                                      pred_protected_attributes_loss_vale))
                     else:
                         _, pred_labels_loss_value = self.sess.run(
                             [classifier_minimizer,
                              pred_labels_loss], feed_dict=batch_feed_dict)
-                        if i % 100 == 0:
+                        if i % 200 == 0:
                             print("epoch %d; iter: %d; batch classifier loss: %f" % (
                             epoch, i, pred_labels_loss_value))
         return self
