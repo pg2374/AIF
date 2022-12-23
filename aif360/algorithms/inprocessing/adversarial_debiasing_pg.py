@@ -1,3 +1,5 @@
+
+
 import numpy as np
 
 try:
@@ -17,7 +19,6 @@ class AdversarialDebiasing(Transformer):
     predictions [5]_. This approach leads to a fair classifier as the
     predictions cannot carry any group discrimination information that the
     adversary can exploit.
-
     References:
         .. [5] B. H. Zhang, B. Lemoine, and M. Mitchell, "Mitigating Unwanted
            Biases with Adversarial Learning," AAAI/ACM Conference on Artificial
@@ -85,14 +86,23 @@ class AdversarialDebiasing(Transformer):
                                   initializer=tf.initializers.glorot_uniform(seed=self.seed1))
             b1 = tf.Variable(tf.zeros(shape=[self.classifier_num_hidden_units]), name='b1')
 
-            h1 = tf.nn.relu(tf.matmul(features, W1) + b1)
-            h1 = tf.nn.dropout(h1, keep_prob=keep_prob, seed=self.seed2)
+            h1 = tf.nn.leaky_relu(tf.matmul(features, W1) + b1)
+            h1 = tf.nn.dropout(h1, rate=1-keep_prob, seed=self.seed2)
 
-            W2 = tf.get_variable('W2', [self.classifier_num_hidden_units, 1],
+            W2 = tf.get_variable('W2', [self.classifier_num_hidden_units, self.classifier_num_hidden_units],
+                                  initializer=tf.initializers.glorot_uniform(seed=self.seed1))
+            b2 = tf.Variable(tf.zeros(shape=[self.classifier_num_hidden_units]), name='b2')
+
+            h2 = tf.nn.leaky_relu(tf.matmul(h1, W2) + b2)
+            h2 = tf.nn.dropout(h2, rate=1-keep_prob, seed=self.seed2)
+
+            
+
+            W3 = tf.get_variable('W3', [self.classifier_num_hidden_units, 1],
                                  initializer=tf.initializers.glorot_uniform(seed=self.seed3))
-            b2 = tf.Variable(tf.zeros(shape=[1]), name='b2')
+            b3 = tf.Variable(tf.zeros(shape=[1]), name='b3')
 
-            pred_logit = tf.matmul(h1, W2) + b2
+            pred_logit = tf.matmul(h2, W3) + b3
             pred_label = tf.sigmoid(pred_logit)
 
         return pred_label, pred_logit
@@ -116,10 +126,8 @@ class AdversarialDebiasing(Transformer):
     def fit(self, dataset):
         """Compute the model parameters of the fair classifier using gradient
         descent.
-
         Args:
             dataset (BinaryLabelDataset): Dataset containing true labels.
-
         Returns:
             AdversarialDebiasing: Returns self.
         """
@@ -160,7 +168,7 @@ class AdversarialDebiasing(Transformer):
 
             # Setup optimizers with learning rates
             global_step = tf.Variable(0, trainable=False)
-            starter_learning_rate = 0.01
+            starter_learning_rate = 0.001
             learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step,
                                                        1000, 0.96, staircase=True)
             classifier_opt = tf.train.AdamOptimizer(learning_rate)
@@ -226,7 +234,6 @@ class AdversarialDebiasing(Transformer):
     def predict(self, dataset):
         """Obtain the predictions for the provided dataset using the fair
         classifier learned.
-
         Args:
             dataset (BinaryLabelDataset): Dataset containing labels that needs
                 to be transformed.
