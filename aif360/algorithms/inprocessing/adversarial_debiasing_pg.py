@@ -145,7 +145,7 @@ class AdversarialDebiasing(Transformer):
         if self.seed is not None:
             np.random.seed(self.seed)
         ii32 = np.iinfo(np.int32)
-        self.seed1, self.seed2, self.seed3, self.seed4, self.seed5, self.seed6, self.seed7, self.seed8 = np.random.randint(ii32.min, ii32.max, size=4)
+        self.seed1, self.seed2, self.seed3, self.seed4, self.seed5, self.seed6, self.seed7, self.seed8 = np.random.randint(ii32.min, ii32.max, size=8)
 
         # Map the dataset labels to 0 and 1.
         temp_labels = dataset.labels.copy()
