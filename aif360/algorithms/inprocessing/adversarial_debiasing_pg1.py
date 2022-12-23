@@ -101,7 +101,7 @@ class AdversarialDebiasing(Transformer):
             b3 = tf.Variable(tf.zeros(shape=[self.classifier_num_hidden_units]), name='b3')
 
             h3 = tf.nn.leaky_relu(tf.matmul(h2, W3) + b3)
-            h3 = tf.nn.dropout(h2, rate=1-keep_prob, seed=self.seed2)
+            h3 = tf.nn.dropout(h3, rate=1-keep_prob, seed=self.seed2)
 
             
             W4 = tf.get_variable('W4', [self.classifier_num_hidden_units, 1],
