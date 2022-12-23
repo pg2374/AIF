@@ -1,14 +1,14 @@
+# HPC Project
+Codebase - adversarial_debiasing_PG2374.ipynb</br>
+Hyperparameters :</br>
+Learning rates - 0.001, 0.01, 0.1</br>
+activation functions - relu, leaky_relu</br>
+BatchSize - Increasing Batch Size decreases training time</br>
+Loss function - sigmoid_cross_entropy_with_logits</br>
+Optimizer - Adam</br>
 
 
-
-
-
-
-
-
-
-
-###References
+###References</br>
 
 # AI Fairness 360 (AIF360)
 
