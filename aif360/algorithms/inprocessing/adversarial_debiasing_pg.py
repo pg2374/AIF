@@ -87,19 +87,12 @@ class AdversarialDebiasing(Transformer):
 
             h1 = tf.nn.relu(tf.matmul(features, W1) + b1)
             h1 = tf.nn.dropout(h1, keep_prob=keep_prob, seed=self.seed2)
-            
-            W2 = tf.get_variable('W2', [features_dim, self.classifier_num_hidden_units],
-                                  initializer=tf.initializers.glorot_uniform(seed=self.seed3))
-            b2 = tf.Variable(tf.zeros(shape=[self.classifier_num_hidden_units]), name='b2')
 
-            h2 = tf.nn.relu(tf.matmul(features, W2) + b2)
-            h2 = tf.nn.dropout(h2, keep_prob=keep_prob, seed=self.seed4)
+            W2 = tf.get_variable('W2', [self.classifier_num_hidden_units, 1],
+                                 initializer=tf.initializers.glorot_uniform(seed=self.seed3))
+            b2 = tf.Variable(tf.zeros(shape=[1]), name='b2')
 
-            W3 = tf.get_variable('W3', [self.classifier_num_hidden_units, 1],
-                                 initializer=tf.initializers.glorot_uniform(seed=self.seed5))
-            b3 = tf.Variable(tf.zeros(shape=[1]), name='b3')
-
-            pred_logit = tf.matmul(h2, W3) + b3
+            pred_logit = tf.matmul(h1, W2) + b2
             pred_label = tf.sigmoid(pred_logit)
 
         return pred_label, pred_logit
@@ -111,11 +104,11 @@ class AdversarialDebiasing(Transformer):
             c = tf.get_variable('c', initializer=tf.constant(1.0))
             s = tf.sigmoid((1 + tf.abs(c)) * pred_logits)
 
-            W3 = tf.get_variable('W3', [3, 1],
-                                 initializer=tf.initializers.glorot_uniform(seed=self.seed6))
-            b3 = tf.Variable(tf.zeros(shape=[1]), name='b3')
+            W2 = tf.get_variable('W2', [3, 1],
+                                 initializer=tf.initializers.glorot_uniform(seed=self.seed4))
+            b2 = tf.Variable(tf.zeros(shape=[1]), name='b2')
 
-            pred_protected_attribute_logit = tf.matmul(tf.concat([s, s * true_labels, s * (1.0 - true_labels)], axis=1), W3) + b3
+            pred_protected_attribute_logit = tf.matmul(tf.concat([s, s * true_labels, s * (1.0 - true_labels)], axis=1), W2) + b2
             pred_protected_attribute_label = tf.sigmoid(pred_protected_attribute_logit)
 
         return pred_protected_attribute_label, pred_protected_attribute_logit
@@ -138,7 +131,7 @@ class AdversarialDebiasing(Transformer):
         if self.seed is not None:
             np.random.seed(self.seed)
         ii32 = np.iinfo(np.int32)
-        self.seed1, self.seed2, self.seed3, self.seed4, self.seed5, self.seed6 = np.random.randint(ii32.min, ii32.max, size=6)
+        self.seed1, self.seed2, self.seed3, self.seed4 = np.random.randint(ii32.min, ii32.max, size=4)
 
         # Map the dataset labels to 0 and 1.
         temp_labels = dataset.labels.copy()
